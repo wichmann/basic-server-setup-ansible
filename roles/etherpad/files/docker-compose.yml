@@ -1,0 +1,66 @@
+services:
+  etherpad-db:
+    image: ${ETHERPAD_DB_IMAGE}
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      start_period: 30s
+      interval: 30s
+      retries: 5
+      timeout: 5s
+    environment:
+      - POSTGRES_DB=etherpad
+      - POSTGRES_PASSWORD=/run/secrets/etherpad_db_password
+      - POSTGRES_USER=etherpad
+    volumes:
+      - etherpad_db_data:/var/lib/postgresql/data
+    networks:
+      - etherpad_net
+    secrets:
+      - etherpad_db_password
+
+  etherpad:
+    image: ${ETHERPAD_IMAGE}
+    restart: on-failure
+    depends_on:
+      - etherpad-db
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.etherpad.loadbalancer.server.port=9001"
+      - "traefik.http.routers.etherpad.rule=Host(`${ETHERPAD_DOMAIN}`)"
+      - "traefik.http.routers.etherpad.tls=true"
+    volumes:
+      - etherpad_data:/opt/etherpad-lite
+    networks:
+      - etherpad_net
+    environment:
+      - DB_TYPE=postgres
+      - DB_HOST=etherpad-db
+      - DB_PORT=5432
+      - DB_NAME=etherpad
+      - DB_USER=etherpad
+      - DB_PASS=/run/secrets/etherpad_db_password
+      - INSTALL_SOFFICE=true
+      - ADMIN_PASSWORD=/run/secrets/etherpad_admin_password
+      - DISABLE_IP_LOGGING=true
+      - PAD_OPTIONS_LANG=de-de
+      - TRUST_PROXY=true
+    secrets:
+      - etherpad_db_password
+      - etherpad_admin_password
+
+volumes:
+  etherpad_data:
+  etherpad_db_data:
+
+networks:
+  etherpad_net:
+    # https://docs.docker.com/compose/networking/#use-a-pre-existing-network
+    name: infrastructure_default
+    external: true
+
+secrets:
+  etherpad_db_password:
+    file: etherpad_db_password.txt
+  etherpad_admin_password:
+    file: etherpad_admin_password.txt

@@ -1,0 +1,30 @@
+- name: Start basic Docker containers
+  ansible.builtin.import_tasks: docker.yml
+
+- name: Add cron job to start Etherpad after reboot
+  ansible.builtin.cron:
+    name: "start Etherpad after reboot"
+    special_time: reboot
+    job: "sleep 60; docker start etherpad-etherpad-1"
+
+- name: Add cron job to start Chronograf after reboot
+  ansible.builtin.cron:
+    name: "start Chronograf after reboot"
+    special_time: reboot
+    job: "sleep 60; docker start grafana-chronograf-1"
+
+- name: Configure logrotate for Traefik logs
+  ansible.builtin.copy:
+    dest: "/etc/logrotate.d/traefik"
+    mode: "0644"
+    content: |
+      /var/log/traefik/*.log {
+        compress
+        size 10M
+        rotate 5
+        missingok
+        notifempty
+        postrotate
+          docker kill --signal="USR1" infrastructure-reverse-proxy-1
+        endscript
+      }

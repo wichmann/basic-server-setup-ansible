@@ -1,0 +1,22 @@
+hostname: server-01.server.internal
+basedomain: server.internal
+
+locale: de_DE.UTF-8
+timezone: Europe/Berlin
+
+admin:
+  username: wichmann
+  fullname: Christian Wichmann
+  key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+  email: "wichmann@bbs-os-brinkstr.de"
+
+services:
+  traefik:
+    dashboard_user: admin
+    dashboard_password: ""
+  portainer:
+    admin_username: "admin" # not used in playbooks!
+    admin_password: ""
+  uptimekuma:
+    admin_username: "admin" # not used in playbooks!
+    admin_password: "" # not used in playbooks!

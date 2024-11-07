@@ -1,0 +1,10 @@
+- name: Install and configure services running on the server
+  hosts: servers
+  become: true
+  remote_user: "{{ admin.username }}"
+  tags: tools
+  roles:
+    - role: etherpad
+      tags: editors
+    - role: homepage
+      tags: misc

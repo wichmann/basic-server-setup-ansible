@@ -1,0 +1,10 @@
+- name: Do basic maintainance task, like update the server and backup all Docker volumes
+  hosts: servers
+  become: true
+  remote_user: "{{ admin.username }}"
+  roles:
+    - role: update
+      tags: update
+    - role: backup
+      tags: backup
+ 

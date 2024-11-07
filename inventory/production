@@ -1,0 +1,5 @@
+servers:
+  hosts:
+    server-01:
+      # pi3-16.r324.local
+      ansible_host: 192.168.24.147

@@ -1,0 +1,5 @@
+backup_volumes:
+  - etherpad_etherpad_data
+  - etherpad_etherpad_db_data
+  - infrastructure_portainer_data
+  - infrastructure_uptime_kuma

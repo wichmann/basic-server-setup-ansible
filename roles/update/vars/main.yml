@@ -1,0 +1,4 @@
+update_docker_stacks:
+  - etherpad
+  - infrastructure
+  - static

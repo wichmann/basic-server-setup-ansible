@@ -1,0 +1,6 @@
+- name: Initial setup of the servers
+  import_playbook: initial-setup.yml
+- name: Install and configure basic infrastructure, like a reverse proxy
+  import_playbook: infrastructure.yml
+- name: Deploy all services, like Etherpad, HedgeDoc and a static webpage
+  import_playbook: services.yml

@@ -1,0 +1,130 @@
+services:
+  reverse-proxy:
+    # Proxy accepting web traffic and routing it to the apps.
+    # Documentation: https://doc.traefik.io/traefik/ 
+    image: ${TRAEFIK_IMAGE}
+    restart: always
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 10s
+      timeout: 1s
+      retries: 3
+      start_period: 10s
+    ports:
+      - "80:80"
+      # open ports for TCP and UDP to allow HTTP/3 via QUIC
+      - "443:443/tcp"
+      - "443:443/udp"
+      # ideally the domain should have a HTTPS DNS record to allow clients to
+      # directly connect over QUIC without establishing a TCP connection first:
+      # example.com 3600 IN HTTPS 1 . alpn="h3,h2" ipv4hint="192.0.2.42" ipv6hint="2001:db8::42"
+    labels:
+      - "traefik.http.routers.dashboard.rule=Host(`${TRAEFIK_DASHBOARD_DOMAIN}`) && ( PathPrefix(`/api`) || PathPrefix(`/dashboard`) || PathPrefix(`/metrics`) )"
+      - "traefik.http.routers.dashboard.service=api@internal"
+      - "traefik.http.routers.dashboard.middlewares=dashboard-auth"
+      - "traefik.http.routers.metrics.rule=Host(`${TRAEFIK_METRICS_DOMAIN}`) && PathPrefix(`/metrics`)"
+      - "traefik.http.routers.metrics.service=prometheus@internal"
+      - "traefik.http.routers.metrics.middlewares=dashboard-auth"
+      # create password for dashboard with: printf "admin:$(openssl passwd -apr1 P@55w0rd)\n" > traefik_dashboard_auth
+      - "traefik.http.middlewares.dashboard-auth.basicauth.usersfile=/run/secrets/traefik_dashboard_auth"
+      - "traefik.http.routers.dashboard.tls=true"
+      - "traefik.http.routers.metrics.tls=true"
+    volumes:
+      # Traefik can listen to the Docker events
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./traefik.yml:/etc/traefik/traefik.yml
+      - ./dynamic_conf.yml:/etc/traefik/dynamic_conf.yml
+      # File permissions for 'acme.json' must be 600
+      - "./acme.json:/etc/traefik/acme.json"
+      - /var/log/traefik:/var/log/traefik
+    secrets:
+      - traefik_dashboard_auth
+
+  portainer:
+    # Management app for containers, volumes, etc.
+    # Documentation: https://docs.portainer.io/user/home
+    image: ${PORTAINER_IMAGE}
+    restart: always
+    command: --admin-password-file /run/secrets/portainer_admin_password
+    labels:
+      - "traefik.http.services.portainer.loadbalancer.server.port=9000"
+      - "traefik.http.routers.portainer.rule=Host(`${PORTAINER_DOMAIN}`)"
+      - "traefik.http.routers.portainer.tls=true"
+      - "traefik.http.routers.portainer.middlewares=secure-headers@file"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    secrets:
+      - portainer_admin_password
+
+  #autoheal:
+  #  image: willfarrell/autoheal
+  #  restart: unless-stopped
+  #  environment:
+  #    AUTOHEAL_CONTAINER_LABEL: "autoheal"
+  #    AUTOHEAL_INTERVAL: 60   # check every 60 seconds
+  #  volumes:
+  #    - "/etc/localtime:/etc/localtime:ro"
+  #    - "/var/run/docker.sock:/var/run/docker.sock"
+
+  watchtower:
+    # Checks all containers for new images and updates them automatically
+    # If notifications should be sent to a telegram channel, you have to create a bot first.
+    #  -> https://core.telegram.org/bots/tutorial
+    # Then you have to get your private chat ID after subscribing to the new bot.
+    #  -> https://flows.network/blog/how-to-find-telegram-chat-id
+    # The Telegram notification URL looks like this: telegram://[bot_id]@telegram/?channels=[chat_id]'
+    image: ${WATCHTOWER_IMAGE}
+    restart: always
+    environment:
+      - TZ=Europe/Berlin
+      #- WATCHTOWER_DEBUG=true
+      - WATCHTOWER_CLEANUP=true         # https://containrrr.dev/watchtower/arguments/#cleanup
+      #- WATCHTOWER_LABEL_ENABLE=true   # https://containrrr.dev/watchtower/arguments/#filter_by_enable_label
+      - WATCHTOWER_INCLUDE_RESTARTING=true
+      #- WATCHTOWER_INCLUDE_STOPPED=true
+      #- WATCHTOWER_REVIVE_STOPPED=true
+      - WATCHTOWER_POLL_INTERVAL=43200  # check every 12 hours
+      - WATCHTOWER_LIFECYCLE_HOOKS=True
+      - WATCHTOWER_NOTIFICATIONS=shoutrrr
+      - WATCHTOWER_NOTIFICATION_URL=/run/secrets/watchtower_telegram_url
+      - WATCHTOWER_NOTIFICATIONS_HOSTNAME=${WATCHTOWER_NOTIFICATION_HOSTNAME}
+      - WATCHTOWER_NOTIFICATION_TITLE_TAG=Infos von ${WATCHTOWER_NOTIFICATION_HOSTNAME}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /etc/localtime:/etc/localtime:ro
+    secrets:
+      - watchtower_telegram_url
+
+  whoami:
+    # A container that exposes an API to show its IP address
+    image: traefik/whoami
+    restart: always
+    labels:
+      - "traefik.http.routers.whoami.tls=true"
+      - "traefik.http.routers.whoami.rule=Host(`${TRAEFIK_DASHBOARD_DOMAIN}`) || PathPrefix(`/who`)"
+
+  uptime-kuma:
+    image: ${UPTIMEKUMA_IMAGE}
+    restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.uptime-kuma.loadbalancer.server.port=3001"
+      - "traefik.http.routers.uptime-kuma.rule=Host(`${UPTIMEKUMA_DOMAIN}`)"
+      - "traefik.http.routers.uptime-kuma.tls=true"
+      - "traefik.http.routers.uptime-kuma.middlewares=secure-headers@file"
+    volumes:
+      - uptime_kuma:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock
+
+volumes:
+  portainer_data:
+  uptime_kuma:
+
+secrets:
+  watchtower_telegram_url:
+    file: watchtower_telegram_url.txt
+  traefik_dashboard_auth:
+    file: traefik_dashboard_auth.txt
+  portainer_admin_password:
+    file: portainer_admin_password.txt

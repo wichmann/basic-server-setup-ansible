@@ -1,0 +1,26 @@
+
+################################################################
+# Define global middleware for HTST header
+################################################################
+
+http:
+  middlewares:
+    secure-headers:
+      headers:
+        frameDeny: true
+        stsIncludeSubdomains: true
+        stsPreload: true
+        stsSeconds: 63072000
+        contentTypeNosniff: true
+        browserXssFilter: true
+        forceSTSHeader: true
+        referrerPolicy: "strict-origin-when-cross-origin"
+    #    accessControlAllowMethods:
+    #      - GET
+    #      - POST
+    #    accessControlAllowOriginList:
+    #      - https://foobar.net
+    #      - https://www.foobar.net
+    #    accessControlMaxAge: 100
+    #    addVaryheader: true
+    #    contentSecurityPolicy: script-src 'self'

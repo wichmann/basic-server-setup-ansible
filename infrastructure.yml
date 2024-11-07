@@ -1,0 +1,16 @@
+- name: Install and configure basic services
+  # Basic services contains reverse proxy, container management, status monitoring, automatic container updates
+  hosts: servers
+  become: true
+  remote_user: "{{ admin.username }}"
+  roles:
+    - role: docker
+      tags: docker
+    - role: infrastructure
+      tags: docker
+    - role: firewall
+      tags: security
+    - role: monitoring
+      tags: monitoring
+    - role: crowdsec
+      tags: security

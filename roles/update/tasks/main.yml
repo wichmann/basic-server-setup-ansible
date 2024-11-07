@@ -1,0 +1,37 @@
+- name: Refresh cache
+  ansible.builtin.apt:
+    update_cache: true
+
+- name: Update distro
+  ansible.builtin.apt:
+    name: "*"
+    state: latest
+    only_upgrade: true
+
+- name: Upgrade all apt packages (apt-get dist-upgrade)
+  ansible.builtin.apt:
+    upgrade: dist
+
+- name: Clear all old packages
+  ansible.builtin.apt:
+    autoclean: true
+    autoremove: true
+
+- name: Prune everything
+  community.docker.docker_prune:
+    containers: true
+    images: true
+    networks: true
+    volumes: true
+    builder_cache: true
+
+- name: Pull image for all Docker stacks
+  community.docker.docker_compose_v2_pull:
+    project_src: "{{ docker.base_dir }}/{{ item }}"
+  loop: "{{ update_docker_stacks }}"
+
+- name: Start Docker container for all Docker stacks
+  community.docker.docker_compose_v2:
+    project_src: "{{ docker.base_dir }}/{{ item }}"
+    state: present
+  loop: "{{ update_docker_stacks }}"

@@ -1,0 +1,131 @@
+################################################################
+#
+# Configuration file for Traefik v3
+#
+################################################################
+
+################################################################
+# Global configuration
+################################################################
+global:
+  checkNewVersion: true
+  sendAnonymousUsage: true
+
+################################################################
+# EntryPoints configuration
+################################################################
+
+# EntryPoints definition
+entryPoints:
+  web:
+    address: :80
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+  websecure:
+    address: :443
+    http3: {}
+
+################################################################
+# Traefik logs configuration
+################################################################
+
+# Traefik logs
+# Enabled by default and log to stdout
+log:
+  # Log level
+  # level: DEBUG
+
+  # Sets the filepath for the traefik log. If not specified, stdout will be used.
+  # Intermediate directories are created if necessary.
+  #
+  # Optional
+  # Default: os.Stdout
+  #
+  filePath: /var/log/traefik/error.log
+
+  # Format is either "json" or "common".
+  # format: json
+
+################################################################
+# Access logs configuration
+################################################################
+
+# Enable access logs
+# By default it will write to stdout and produce logs in the textual
+# Common Log Format (CLF), extended with additional fields.
+accessLog:
+  # Sets the file path for the access log. If not specified, stdout will be used.
+  # Intermediate directories are created if necessary.
+  filePath: /var/log/traefik/access.log
+
+  # Format is either "json" or "common".
+  # format: json
+
+################################################################
+# API and dashboard configuration
+################################################################
+
+# Enable API and dashboard
+api:
+  # Enable the API in insecure mode
+  insecure: false
+
+  # Enabled Dashboard
+  dashboard: true
+
+################################################################
+# Ping configuration
+################################################################
+
+# Enable ping
+ping:
+  # Name of the related entry point
+  entryPoint: traefik
+
+################################################################
+# Metrics configuration
+################################################################
+
+metrics:
+  prometheus:
+    addEntryPointsLabels: true
+    addRoutersLabels: true
+    addServicesLabels: true
+    manualRouting: true
+
+################################################################
+# Docker configuration backend
+################################################################
+
+providers:
+  # Enable Docker configuration backend
+  docker: {}
+
+  # Enable the file provider to define routers / middlewares / services in file
+  file:
+    filename: /etc/traefik/dynamic_conf.yml
+    watch: true
+
+################################################################
+# Set TLS parameters
+################################################################
+
+# Copied from: https://github.com/ct-Open-Source/telerec-t-traefik/blob/246f2be6ea79baa7cefae9eccf718304771a2eae/files/tls-options.yml
+tls:
+  options:
+    default:
+      minVersion: VersionTLS12
+      sniStrict: true
+      cipherSuites:
+        - TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+        - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+        - TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+        - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+        - TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
+        - TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305
+      curvePreferences:
+        - CurveP521
+        - CurveP384

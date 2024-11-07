@@ -1,0 +1,69 @@
+- name: Create directory for Docker files
+  ansible.builtin.file:
+    path: "{{ docker.base_dir }}/infrastructure/"
+    state: directory
+    mode: "0644"
+
+- name: Copy Docker Compose file
+  become: true
+  ansible.builtin.copy:
+    src: files/docker-compose.yml
+    dest: "{{ docker.base_dir }}/infrastructure/docker-compose.yml"
+    mode: "0644"
+
+- name: Copy Traefik configuration file
+  become: true
+  ansible.builtin.copy:
+    src: files/traefik.yml
+    dest: "{{ docker.base_dir }}/infrastructure/traefik.yml"
+    mode: "0644"
+
+- name: Copy Traefik dynamic configuration
+  become: true
+  ansible.builtin.copy:
+    src: files/dynamic_conf.yml
+    dest: "{{ docker.base_dir }}/infrastructure/dynamic_conf.yml"
+    mode: "0644"
+
+- name: Create acme.json with correct file permissions!!!
+  # create empty file: https://stackoverflow.com/a/34929776
+  ansible.builtin.copy:
+    content: ""
+    dest: "{{ docker.base_dir }}/infrastructure/acme.json"
+    force: false
+    mode: '0600'
+
+- name: Set env variables for Traefik
+  become: true
+  ansible.builtin.template:
+    src: .env.j2
+    dest: "{{ docker.base_dir }}/infrastructure/.env"
+    mode: "0644"
+
+- name: Create secrets file for Watchtower configuration
+  ansible.builtin.copy:
+    content: "telegram://{{ telegram.token }}@telegram/?channels={{ telegram.chatid }}"
+    dest: "{{ docker.base_dir }}/infrastructure/watchtower_telegram_url.txt"
+    mode: "0644"
+
+- name: Create secrets file for Portainer password
+  ansible.builtin.copy:
+    content: "{{ services.portainer.admin_password }}"
+    dest: "{{ docker.base_dir }}/infrastructure/portainer_admin_password.txt"
+    mode: "0644"
+
+- name: Create HTTP basic auth credentials for Traefik dashboard
+  community.general.htpasswd:
+    path: "{{ docker.base_dir }}/infrastructure/traefik_dashboard_auth.txt"
+    name: "{{ services.traefik.dashboard_user }}"
+    password: "{{ services.traefik.dashboard_password }}"
+    # explicitly use secure hash "bcrypt" instead of "md5"
+    # https://passlib.readthedocs.io/en/stable/lib/passlib.apache.html#passlib.apache.HtpasswdFile
+    hash_scheme: bcrypt
+    mode: "0644"
+
+- name: Start Docker container for infrastructure
+  community.docker.docker_compose_v2:
+    project_src: "{{ docker.base_dir }}/infrastructure"
+    state: present
+  register: output

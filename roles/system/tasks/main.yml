@@ -1,0 +1,38 @@
+- name: Create users and set permissions
+  ansible.builtin.import_tasks:
+    file: user.yml
+
+- name: Configure sshd and handle ssh keys
+  ansible.builtin.import_tasks:
+    file: ssh.yml
+
+- name: Install necessary packages and update everything
+  ansible.builtin.import_tasks:
+    file: updates.yml
+
+- name: Set a hostname
+  become: true
+  ansible.builtin.hostname:
+    name: "{{ hostname }}"
+
+- name: Set timezone
+  become: true
+  community.general.timezone:
+    name: "{{ timezone }}"
+
+- name: Ensure a locale exists
+  become: true
+  community.general.locale_gen:
+    name: "{{ locale }}"
+    state: present
+
+- name: Set as given locale as default locale
+  ansible.builtin.command: "localectl set-locale LANG={{ locale }}"
+  changed_when: true # set locale each run of the playbook
+
+- name: Create profile.d configuration
+  become: true
+  ansible.builtin.template:
+    src: show_info.sh.j2
+    dest: /etc/profile.d/show_info.sh
+    mode: "0644"

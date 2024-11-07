@@ -1,0 +1,26 @@
+system_basic_packages:
+  - vim
+  - nano
+  - mc
+  - wget
+  - curl
+  - zsh
+  - htop
+  - bpytop
+  - python3
+  - python3-pip
+  - python3-docker
+  - python3-passlib
+  - rsync
+  - zip
+  - unzip
+  - ufw
+  - figlet
+  - neofetch
+  - fortunes-bofh-excuses
+  - fortunes-de
+  - ncdu
+  - unattended-upgrades
+  - gnupg
+  - apt-transport-https
+  - ripgrep

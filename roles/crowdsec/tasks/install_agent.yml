@@ -1,0 +1,58 @@
+- name: Add crowdsec apt-key
+  ansible.builtin.apt_key:
+    url: https://packagecloud.io/crowdsec/crowdsec/gpgkey
+    keyring: /etc/apt/keyrings/crowdsec_crowdsec-archive-keyring.gpg
+    state: present
+
+# https://packagecloud.io/crowdsec/crowdsec/install#manual-deb
+- name: Add crowdsec apt repository
+  ansible.builtin.apt_repository:
+    repo: deb [signed-by=/etc/apt/keyrings/crowdsec_crowdsec-archive-keyring.gpg] https://packagecloud.io/crowdsec/crowdsec/any any main
+    state: present
+    filename: crowdsec
+    update_cache: true
+
+- name: Refresh apt cache
+  ansible.builtin.apt:
+    update_cache: true
+
+- name: Install crowdsec
+  ansible.builtin.apt:
+    name: crowdsec
+    state: present
+    update_cache: true
+
+- name: Update collections from Crowdsec hub
+  ansible.builtin.command: "cscli hub update"
+  changed_when: true # execute command on each run of the playbook
+
+- name: Install plugin to enrich data with geo information about IP addresses
+  ansible.builtin.command: "cscli parsers install crowdsecurity/geoip-enrich"
+  changed_when: true # execute command on each run of the playbook
+
+- name: Install Traefik collection to parse it's log files
+  ansible.builtin.command: "cscli collections install crowdsecurity/traefik"
+  changed_when: true # execute command on each run of the playbook
+  notify:
+    - Reload crowdsec
+
+- name: Create directory for Crowdsec configuration files
+  ansible.builtin.file:
+    path: /etc/crowdsec/acquis.d/
+    recurse: true
+    state: directory
+    mode: "0644"
+
+- name: Write configuration file to aquire and parse Traefik log files
+  ansible.builtin.copy:
+    dest: /etc/crowdsec/acquis.d/traefik.yaml
+    mode: "0644"
+    content: |
+      ---
+      source: file
+      filenames:
+        - /var/log/traefik/*.log
+      labels:
+        type: traefik
+  notify:
+    - Restart crowdsec

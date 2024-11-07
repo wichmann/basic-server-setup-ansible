@@ -1,0 +1,54 @@
+- name: Install crowdsec agent
+  ansible.builtin.import_tasks: install_agent.yml
+  tags:
+    - agent
+
+- name: Disable pushing information to the central API
+  ansible.builtin.command: "cscli console disable custom manual tainted"
+  register: output
+  changed_when: true # execute command on each run of the playbook
+  notify:
+    - Reload crowdsec
+  tags:
+    - console
+
+- name: Copy notification configuration to /etc/crowdsec/notifications
+  # Source: https://docs.crowdsec.net/docs/notification_plugins/telegram
+  become: true
+  ansible.builtin.template:
+    src: telegram.yaml
+    dest: "/etc/crowdsec/notifications/"
+    mode: "0644"
+
+- name: Add telegram notification to Crowdsec configuration
+  ansible.builtin.replace:
+    path: "/etc/crowdsec/profiles.yaml"
+    regexp: "^# notifications:"
+    replace: "notifications:\n  - telegram\n"
+
+- name: Add Grafana Alloy config for scraping Prometheus metrics from Crowdsec
+  ansible.builtin.blockinfile:
+    path: "/etc/alloy/config.alloy"
+    # Change marker because # is NOT a comment in Alloy config
+    marker: "// {mark} ANSIBLE MANAGED BLOCK"
+    block: |
+      prometheus.scrape "crowdsec" {
+        targets = [{
+          __address__ = "127.0.0.1:6060",
+        }]
+        forward_to = [prometheus.remote_write.metrics_service.receiver]
+      }
+  notify:
+    - Reload alloy
+
+- name: Setup cronjob to update crowdsec collections
+  ansible.builtin.cron:
+    name: "update Crowdsec collections"
+    hour: 3
+    minute: 0
+    job: "cscli hub update && cscli hub upgrade --force >/dev/null 2>&1"
+
+- name: Install bouncers
+  ansible.builtin.include_tasks: install_bouncers.yml
+  tags:
+    - bouncers

@@ -1,0 +1,7 @@
+- name: Initial Server Setup
+  hosts: servers
+  become: true
+  remote_user: root
+  tags: system
+  roles:
+    - role: system
