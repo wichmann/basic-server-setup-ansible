@@ -25,5 +25,5 @@ monitoring:
     password: ""
 
 telegram:
-  chatid: 
-  token: 
+  chatid:
+  token:

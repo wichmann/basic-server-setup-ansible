@@ -1,7 +1,7 @@
 name: ansible-lint
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
     branches: ["main", "stable", "release/v*"]
 jobs:
@@ -13,7 +13,7 @@ jobs:
       - name: Run ansible-lint
         uses: ansible/ansible-lint@main
         # optional (see below):
-        #with:
+        # with:
         #  args: ""
         #  setup_python: "true"
         #  working_directory: ""

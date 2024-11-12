@@ -1,7 +1,7 @@
 services:
   reverse-proxy:
     # Proxy accepting web traffic and routing it to the apps.
-    # Documentation: https://doc.traefik.io/traefik/ 
+    # Documentation: https://doc.traefik.io/traefik/
     image: ${TRAEFIK_IMAGE}
     restart: always
     healthcheck:
@@ -57,7 +57,7 @@ services:
     secrets:
       - portainer_admin_password
 
-  #autoheal:
+  # autoheal:
   #  image: willfarrell/autoheal
   #  restart: unless-stopped
   #  environment:
@@ -78,12 +78,12 @@ services:
     restart: always
     environment:
       - TZ=Europe/Berlin
-      #- WATCHTOWER_DEBUG=true
+      # - WATCHTOWER_DEBUG=true
       - WATCHTOWER_CLEANUP=true         # https://containrrr.dev/watchtower/arguments/#cleanup
-      #- WATCHTOWER_LABEL_ENABLE=true   # https://containrrr.dev/watchtower/arguments/#filter_by_enable_label
+      # - WATCHTOWER_LABEL_ENABLE=true   # https://containrrr.dev/watchtower/arguments/#filter_by_enable_label
       - WATCHTOWER_INCLUDE_RESTARTING=true
-      #- WATCHTOWER_INCLUDE_STOPPED=true
-      #- WATCHTOWER_REVIVE_STOPPED=true
+      # - WATCHTOWER_INCLUDE_STOPPED=true
+      # - WATCHTOWER_REVIVE_STOPPED=true
       - WATCHTOWER_POLL_INTERVAL=43200  # check every 12 hours
       - WATCHTOWER_LIFECYCLE_HOOKS=True
       - WATCHTOWER_NOTIFICATIONS=shoutrrr
