@@ -8,6 +8,10 @@ After that you can install all ansible roles from Ansible Galaxy:
 
     ansible-galaxy install -r requirements.yml
 
+These scripts require a virtual machine or a bare metal server running Ubuntu
+Linux (or a similar distribution) and SSH access with authentication by
+password!
+
 ## Usage
 First, you have to provide all necessary parameters and settings by editing the
 files in the directories "group_vars" and "host_vars". Then you have to set the
@@ -15,7 +19,11 @@ hostname or IP address of your server in the directory 'inventory/production'.
 
 For accessing the server, you need to create a SSH key on your host machine:
 
-    ssh-keygen
+    ssh-keygen -t ed25519
+
+You can check the SSH connection with the following command:
+
+    ansible servers -m ping --user xxxxxx --ask-pass
 
 After that you can just run the first playbook to configure a admin user and
 upload your SSH key:

@@ -7,7 +7,7 @@ timezone: Europe/Berlin
 admin:
   username: wichmann
   fullname: Christian Wichmann
-  key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+  key: "{{ lookup('file', '~/.ssh/id_ed25519.pub') }}"
   email: "wichmann@bbs-os-brinkstr.de"
 
 services:
