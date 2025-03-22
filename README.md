@@ -28,7 +28,7 @@ You can check the SSH connection with the following command:
 After that you can just run the first playbook to configure a admin user and
 upload your SSH key:
 
-    ansible-playbook initial-setup.yml --extra-vars "ansible_user=pi ansible_password=raspberry"
+    ansible-playbook initial-setup.yml --user xxxxxx --ask-pass --ask-become-pass
 
 All following playbook run as the admin user, that was created in the first
 playbook and use the uploaded SSH key.
